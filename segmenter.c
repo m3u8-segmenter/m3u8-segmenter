@@ -198,7 +198,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
     }
 
-    s fprintf(stderr, output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
+    fprintf(stderr, output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
     if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
         fprintf(stderr, "Could not open '%s'\n", output_filename);
         exit(1);
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
         index_fp = NULL;
     }
     else {
-        s fprintf(stderr, write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", (unsigned int)segment_duration);
+        fprintf(stderr, write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", (unsigned int)segment_duration);
         if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
             fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
             fclose(index_fp);
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
             url_fclose(oc->pb);
 
             if (index_fp) {
-                s fprintf(stderr, write_buf, 1024, "#EXTINF:%u,\n%s%s\n", (unsigned int)segment_duration, http_prefix, output_filename);
+                fprintf(stderr, write_buf, 1024, "#EXTINF:%u,\n%s%s\n", (unsigned int)segment_duration, http_prefix, output_filename);
                 if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
                     fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
                     fclose(index_fp);
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
                 }
             }
 
-            s fprintf(stderr, output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
+            fprintf(stderr, output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
             if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
                 fprintf(stderr, "Could not open '%s'\n", output_filename);
                 break;
@@ -313,7 +313,7 @@ int main(int argc, char **argv)
     url_fclose(oc->pb);
 
     if (index_fp) {
-        s fprintf(stderr, write_buf, 1024, "#EXTINF:%u,\n%s%s\n#EXT-X-ENDLIST\n", (unsigned int)segment_duration, http_prefix, output_filename);
+        fprintf(stderr, write_buf, 1024, "#EXTINF:%u,\n%s%s\n#EXT-X-ENDLIST\n", (unsigned int)segment_duration, http_prefix, output_filename);
         if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
             fprintf(stderr, "Could not write last file and endlist tag to m3u8 index file\n");
         }
