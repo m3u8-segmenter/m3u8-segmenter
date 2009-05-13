@@ -79,18 +79,69 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
     return output_stream;
 }
 
+int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end) {
+    FILE *index_fp;
+    char *write_buf;
+    unsigned int i;
+
+    index_fp = fopen(tmp_index, "w");
+    if (!index_fp) {
+        fprintf(stderr, "Could not open temporary m3u8 index file (%s), no index file will be created\n", tmp_index);
+        return -1;
+    }
+
+    write_buf = malloc(sizeof(char) * 1024);
+    if (!write_buf) {
+        fprintf(stderr, "Could not allocate write buffer for index file, index file will be invalid\n");
+        fclose(index_fp);
+        return -1;
+    }
+
+    snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", (unsigned int)segment_duration);
+    if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
+        fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
+        free(write_buf);
+        fclose(index_fp);
+        return -1;
+    }
+
+    for (i = first_segment; i <= last_segment; i++) {
+        snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s-%05u.ts\n", segment_duration, http_prefix, output_prefix, i);
+        if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
+            fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
+            free(write_buf);
+            fclose(index_fp);
+            return -1;
+        }
+    }
+
+    if (end) {
+        snprintf(write_buf, 1024, "#EXT-X-ENDLIST\n");
+        if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
+            fprintf(stderr, "Could not write last file and endlist tag to m3u8 index file\n");
+            free(write_buf);
+            fclose(index_fp);
+            return -1;
+        }
+    }
+
+    free(write_buf);
+    fclose(index_fp);
+
+    return rename(tmp_index, index);
+}
+
 int main(int argc, char **argv)
 {
     const char *input;
     const char *output_prefix;
     double segment_duration;
     char *segment_duration_check;
-    char *index;
-    char *http_prefix;
-    FILE *index_fp;
+    const char *index;
+    char *tmp_index;
+    const char *http_prefix;
     double prev_segment_time = 0;
     unsigned int output_index = 1;
-    char *write_buf;
     AVInputFormat *ifmt;
     AVOutputFormat *ofmt;
     AVFormatContext *ic = NULL;
@@ -101,6 +152,9 @@ int main(int argc, char **argv)
     char *output_filename;
     int video_index;
     int audio_index;
+    unsigned int first_segment = 1;
+    unsigned int last_segment = 0;
+    int write_index = 1;
     int decode_done;
     int ret;
     int i;
@@ -130,6 +184,14 @@ int main(int argc, char **argv)
         fprintf(stderr, "Could not allocate space for output filenames\n");
         exit(1);
     }
+
+    tmp_index = malloc(strlen(index) + 2);
+    if (!tmp_index) {
+        fprintf(stderr, "Could not allocate space for temporary index filename\n");
+        exit(1);
+    }
+
+    snprintf(tmp_index, strlen(index) + 2, ".%s", index);
 
     ifmt = av_find_input_format("mpegts");
     if (!ifmt) {
@@ -209,30 +271,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    index_fp = fopen(index, "w");
-    write_buf = malloc(sizeof(char) * 1024);
-    if (!index_fp) {
-        fprintf(stderr, "Could not open m3u8 index file (%s), no index file will be created\n", index);
-        if (write_buf) {
-            free(write_buf);
-            write_buf = NULL;
-        }
-    }
-    else if (!write_buf) {
-        fprintf(stderr, "Could not allocate write buffer for index file, index file will be invalid\n");
-        fclose(index_fp);
-        index_fp = NULL;
-    }
-    else {
-        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", (unsigned int)segment_duration);
-        if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
-            fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
-            fclose(index_fp);
-            index_fp = NULL;
-            free(write_buf);
-            write_buf = NULL;
-        }
-    }
+    write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0);
 
     do {
         double segment_time;
@@ -263,18 +302,8 @@ int main(int argc, char **argv)
             put_flush_packet(oc->pb);
             url_fclose(oc->pb);
 
-            if (index_fp) {
-                snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s\n", (unsigned int)segment_duration, http_prefix, output_filename);
-                if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
-                    fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
-                    fclose(index_fp);
-                    index_fp = NULL;
-                    free(write_buf);
-                    write_buf = NULL;
-                }
-                else {
-                    fflush(index_fp);
-                }
+            if (write_index) {
+                write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0);
             }
 
             snprintf(output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
@@ -311,22 +340,11 @@ int main(int argc, char **argv)
     }
 
     url_fclose(oc->pb);
-
-    if (index_fp) {
-        snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s\n#EXT-X-ENDLIST\n", (unsigned int)segment_duration, http_prefix, output_filename);
-        if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
-            fprintf(stderr, "Could not write last file and endlist tag to m3u8 index file\n");
-        }
-    }
-
-    free(output_filename);
-
-    if (index_fp) {
-        fclose(index_fp);
-        free(write_buf);
-    }
-
     av_free(oc);
+
+    if (write_index) {
+        write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1);
+    }
 
     return 0;
 }
