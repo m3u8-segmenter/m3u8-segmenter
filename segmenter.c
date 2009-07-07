@@ -156,6 +156,7 @@ int main(int argc, char **argv)
     unsigned int last_segment = 0;
     int write_index = 1;
     int decode_done;
+    char *dot;
     int ret;
     int i;
 
@@ -191,7 +192,13 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    snprintf(tmp_index, strlen(index) + 2, ".%s", index);
+    strncpy(tmp_index, index, strlen(index) + 2);
+    dot = strrchr(tmp_index, '/');
+    dot = dot ? dot + 1 : tmp_index;
+    for (i = strlen(tmp_index) + 1; i > dot - tmp_index; i--) {
+        tmp_index[i] = tmp_index[i - 1];
+    }
+    *dot = '.';
 
     ifmt = av_find_input_format("mpegts");
     if (!ifmt) {
@@ -315,7 +322,7 @@ int main(int argc, char **argv)
             prev_segment_time = segment_time;
         }
 
-        ret = av_write_frame(oc, &packet);
+        ret = av_interleaved_write_frame(oc, &packet);
         if (ret < 0) {
             fprintf(stderr, "Could not write frame of stream\n");
             av_free_packet(&packet);
