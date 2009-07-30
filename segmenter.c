@@ -72,14 +72,14 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
                 output_codec_context->flags |= CODEC_FLAG_GLOBAL_HEADER;
             }
             break;
-	default:
-	    break;
+    default:
+        break;
     }
 
     return output_stream;
 }
 
-int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end) {
+int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window) {
     FILE *index_fp;
     char *write_buf;
     unsigned int i;
@@ -97,7 +97,12 @@ int write_index_file(const char index[], const char tmp_index[], const unsigned 
         return -1;
     }
 
-    snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", (unsigned int)segment_duration);
+    if (window) {
+        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n#EXT-X-MEDIA-SEQUENCE:%u\n", segment_duration, first_segment);
+    }
+    else {
+        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", segment_duration);
+    }
     if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
         fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
         free(write_buf);
@@ -106,7 +111,7 @@ int write_index_file(const char index[], const char tmp_index[], const unsigned 
     }
 
     for (i = first_segment; i <= last_segment; i++) {
-        snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s-%05u.ts\n", segment_duration, http_prefix, output_prefix, i);
+        snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s-%u.ts\n", segment_duration, http_prefix, output_prefix, i);
         if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
             fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
             free(write_buf);
@@ -140,6 +145,8 @@ int main(int argc, char **argv)
     const char *index;
     char *tmp_index;
     const char *http_prefix;
+    long max_tsfiles = 0;
+    char *max_tsfiles_check;
     double prev_segment_time = 0;
     unsigned int output_index = 1;
     AVInputFormat *ifmt;
@@ -150,6 +157,7 @@ int main(int argc, char **argv)
     AVStream *audio_st;
     AVCodec *codec;
     char *output_filename;
+    char *remove_filename;
     int video_index;
     int audio_index;
     unsigned int first_segment = 1;
@@ -159,9 +167,10 @@ int main(int argc, char **argv)
     char *dot;
     int ret;
     int i;
+    int remove_file;
 
-    if (argc != 6) {
-        fprintf(stderr, "Usage: %s <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix>\n", argv[0]);
+    if (argc < 6 || argc > 7) {
+        fprintf(stderr, "Usage: %s <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]\n", argv[0]);
         exit(1);
     }
 
@@ -171,16 +180,29 @@ int main(int argc, char **argv)
     if (!strcmp(input, "-")) {
         input = "pipe:";
     }
-    segment_duration = strtoll(argv[2], &segment_duration_check, 10);
-    if (segment_duration_check == argv[2]) {
+    segment_duration = strtod(argv[2], &segment_duration_check);
+    if (segment_duration_check == argv[2] || segment_duration == HUGE_VAL || segment_duration == -HUGE_VAL) {
         fprintf(stderr, "Segment duration time (%s) invalid\n", argv[2]);
         exit(1);
     }
     output_prefix = argv[3];
     index = argv[4];
     http_prefix=argv[5];
+    if (argc == 7) {
+        max_tsfiles = strtol(argv[6], &max_tsfiles_check, 10);
+        if (max_tsfiles_check == argv[6] || max_tsfiles < 0 || max_tsfiles >= INT_MAX) {
+            fprintf(stderr, "Maximum number of ts files (%s) invalid\n", argv[6]);
+            exit(1);
+        }
+    }
 
-    output_filename = malloc(sizeof(char) * (strlen(output_prefix) + 10));
+    remove_filename = malloc(sizeof(char) * (strlen(output_prefix) + 15));
+    if (!remove_filename) {
+        fprintf(stderr, "Could not allocate space for remove filenames\n");
+        exit(1);
+    }
+
+    output_filename = malloc(sizeof(char) * (strlen(output_prefix) + 15));
     if (!output_filename) {
         fprintf(stderr, "Could not allocate space for output filenames\n");
         exit(1);
@@ -267,7 +289,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
     }
 
-    snprintf(output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
+    snprintf(output_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, output_index++);
     if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
         fprintf(stderr, "Could not open '%s'\n", output_filename);
         exit(1);
@@ -278,7 +300,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0);
+    write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
 
     do {
         double segment_time;
@@ -309,11 +331,24 @@ int main(int argc, char **argv)
             put_flush_packet(oc->pb);
             url_fclose(oc->pb);
 
-            if (write_index) {
-                write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0);
+            if (max_tsfiles && (int)(last_segment - first_segment) >= max_tsfiles - 1) {
+                remove_file = 1;
+                first_segment++;
+            }
+            else {
+                remove_file = 0;
             }
 
-            snprintf(output_filename, strlen(output_prefix) + 10, "%s-%05u.ts", output_prefix, output_index++);
+            if (write_index) {
+                write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0, max_tsfiles);
+            }
+
+            if (remove_file) {
+                snprintf(remove_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, first_segment - 1);
+                remove(remove_filename);
+            }
+
+            snprintf(output_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, output_index++);
             if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
                 fprintf(stderr, "Could not open '%s'\n", output_filename);
                 break;
@@ -324,9 +359,7 @@ int main(int argc, char **argv)
 
         ret = av_interleaved_write_frame(oc, &packet);
         if (ret < 0) {
-            fprintf(stderr, "Could not write frame of stream\n");
-            av_free_packet(&packet);
-            break;
+            fprintf(stderr, "Warning: Could not write frame of stream\n");
         }
         else if (ret > 0) {
             fprintf(stderr, "End of stream requested\n");
@@ -349,8 +382,21 @@ int main(int argc, char **argv)
     url_fclose(oc->pb);
     av_free(oc);
 
+    if (max_tsfiles && (int)(last_segment - first_segment) >= max_tsfiles - 1) {
+        remove_file = 1;
+        first_segment++;
+    }
+    else {
+        remove_file = 0;
+    }
+
     if (write_index) {
-        write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1);
+        write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1, max_tsfiles);
+    }
+
+    if (remove_file) {
+        snprintf(remove_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, first_segment - 1);
+        remove(remove_filename);
     }
 
     return 0;
