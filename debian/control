@@ -3,7 +3,7 @@ Section: video
 Priority: extra
 Maintainer: John Francesco Ferlito <johnf@inodes.org>
 Build-Depends: debhelper (>= 7)
-Standards-Version: 3.8.3
+Standards-Version: 3.9.1
 
 Package: segmenter
 Architecture: any
