@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SEGMENTER SECTION "November 13, 2010"
+.TH SEGMENTER 1 "November 13, 2010"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,44 +16,23 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-segmenter \- program to do something
+segmenter \- Performs Apple HTTP Live Streaming segmentation
 .SH SYNOPSIS
 .B segmenter
-.RI [ options ] " files" ...
+.RI <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]
 .br
-.B bar
-.RI [ options ] " files" ...
 .SH DESCRIPTION
 This manual page documents briefly the
 .B segmenter
-and
-.B bar
-commands.
+commandd.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics,
 .\" respectively.
-\fBsegmenter\fP is a program that...
-.SH OPTIONS
-These programs follow the usual GNU command line syntax, with long
-options starting with two dashes (`-').
-A summary of options is included below.
-For a complete description, see the Info files.
-.TP
-.B \-h, \-\-help
-Show summary of options.
-.TP
-.B \-v, \-\-version
-Show version of program.
-.SH SEE ALSO
-.BR bar (1),
-.BR baz (1).
+\fBsegmenter\fP is used to create file segments and an M3U8 index for Apple HTTP Live Streaming
 .br
-The programs are documented fully by
-.IR "The Rise and Fall of a Fooish Bar" ,
-available via the Info system.
 .SH AUTHOR
-segmenter was written by <upstream author>.
+segmenter was written by Chase Douglas.
 .PP
 This manual page was written by John Francesco Ferlito <johnf@inodes.org>,
 for the Debian project (and may be used by others).
