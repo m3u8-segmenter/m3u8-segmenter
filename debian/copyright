@@ -1,0 +1,23 @@
+This work was packaged for Debian by:
+
+    John Francesco Ferlito <johnf@inodes.org> on Sat, 13 Nov 2010 20:08:28 +1100
+
+It was downloaded from http://svn.assembla.com/svn/legend/segmenter/
+
+Upstream Author(s):
+
+    Chase Douglas
+
+Copyright:
+
+    Copyright (c) 2009 Chase Douglas
+
+License:
+
+    GPL-2
+
+The Debian packaging is:
+
+    Copyright (C) 2010 John Francesco Ferlito <johnf@inodes.org>
+    and is licensed under the GPL version 3,
+    see `/usr/share/common-licenses/GPL-3'.
