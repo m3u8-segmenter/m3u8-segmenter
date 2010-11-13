@@ -2,10 +2,9 @@ all:
 	gcc -Wall -g segmenter.c -o segmenter -lavformat -lavcodec -lavutil
 
 clean:
-	rm segmenter
+	rm -f segmenter
 
 install: segmenter
-	cp segmenter /usr/local/bin/
+	mkdir $(DESTDIR)/bin/
+	cp segmenter $(DESTDIR)/bin/
 
-uninstall:
-	rm /usr/local/bin/segmenter
