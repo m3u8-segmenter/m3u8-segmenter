@@ -5,6 +5,6 @@ clean:
 	rm -f segmenter
 
 install: segmenter
-	mkdir $(DESTDIR)/bin/
-	cp segmenter $(DESTDIR)/bin/
+	mkdir -p $(DESTDIR)/usr/bin/
+	cp segmenter $(DESTDIR)/usr/bin/
 
