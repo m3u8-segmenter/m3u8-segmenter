@@ -17,8 +17,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #include "libavformat/avformat.h"
+
+int terminate = 0;
+
+void handler(int signum) {
+  terminate = 1;
+}
 
 static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStream *input_stream) {
     AVCodecContext *input_codec_context;
@@ -302,9 +309,21 @@ int main(int argc, char **argv)
 
     write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
 
+    /* Setup signals */
+    struct sigaction act;
+    memset(&act, 0, sizeof(act));
+    act.sa_handler = &handler;
+
+    sigaction(SIGINT, &act, NULL);
+    sigaction(SIGTERM, &act, NULL);
+
     do {
         double segment_time;
         AVPacket packet;
+
+        if (terminate) {
+          break;
+        }
 
         decode_done = av_read_frame(ic, &packet);
         if (decode_done < 0) {
