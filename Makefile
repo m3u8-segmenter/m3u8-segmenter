@@ -1,10 +1,10 @@
 all:
-	gcc -Wall -g segmenter.c -o segmenter -lavformat -lavcodec -lavutil
+	gcc -Wall -g m3u8-segmenter.c -o m3u8-segmenter -lavformat -lavcodec -lavutil
 
 clean:
-	rm -f segmenter
+	rm -f m3u8-segmenter
 
-install: segmenter
+install: m3u8-segmenter
 	mkdir -p $(DESTDIR)/usr/bin/
-	cp segmenter $(DESTDIR)/usr/bin/
+	cp m3u8-segmenter $(DESTDIR)/usr/bin/
 

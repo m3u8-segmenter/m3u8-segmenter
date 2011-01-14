@@ -1,15 +1,15 @@
-Source: segmenter
+Source: m3u8-segmenter
 Section: video
 Priority: extra
 Maintainer: John Francesco Ferlito <johnf@inodes.org>
 Build-Depends: debhelper (>= 7), libavformat-dev
 Standards-Version: 3.9.1
 
-Package: segmenter
+Package: m3u8-segmenter
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: ffmpeg
 Description: Apple HTTP Live Streaming Segmenter
  Takes in an MPEG-TS stream from a tool like ffmpeg and breaks it up into
- multiple ts-segments suitable got http live streaming. The M3U8 stream
+ multiple ts-segments suitable for http live streaming. The M3U8 stream
  descriptor is also generated.

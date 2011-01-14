@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH SEGMENTER 1 "November 13, 2010"
+.TH M3U8\-SEGMENTER 1 "November 13, 2010"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,23 +16,21 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-segmenter \- Performs Apple HTTP Live Streaming segmentation
+m3u8\-segmenter \- Performs Apple HTTP Live Streaming segmentation
 .SH SYNOPSIS
-.B segmenter
+.B m3u8\-segmenter
 .RI <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]
 .br
 .SH DESCRIPTION
 This manual page documents briefly the
-.B segmenter
+.B m3u8\-segmenter
 commandd.
 .PP
 .\" TeX users may be more comfortable with the \fB<whatever>\fP and
 .\" \fI<whatever>\fP escape sequences to invode bold face and italics,
 .\" respectively.
-\fBsegmenter\fP is used to create file segments and an M3U8 index for Apple HTTP Live Streaming
+\fBm3u8\-segmenter\fP is used to create file segments and an M3U8 index for Apple HTTP Live Streaming
 .br
 .SH AUTHOR
-segmenter was written by Chase Douglas.
+m3u8\-segmenter was written by Chase Douglas and is now maintained by John Ferlito.
 .PP
-This manual page was written by John Francesco Ferlito <johnf@inodes.org>,
-for the Debian project (and may be used by others).

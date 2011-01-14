@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2009 Chase Douglas
+ * Copyright (c) 2011 John Ferlito
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version 2
@@ -420,5 +421,3 @@ int main(int argc, char **argv)
 
     return 0;
 }
-
-// vim:sw=4:tw=4:ts=4:ai:expandtab
