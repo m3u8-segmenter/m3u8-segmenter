@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <signal.h>
 
 #include "libavformat/avformat.h"
@@ -161,8 +162,8 @@ int main(int argc, char **argv)
     AVOutputFormat *ofmt;
     AVFormatContext *ic = NULL;
     AVFormatContext *oc;
-    AVStream *video_st;
-    AVStream *audio_st;
+    AVStream *video_st = NULL;
+    AVStream *audio_st = NULL;
     AVCodec *codec;
     char *output_filename;
     char *remove_filename;
@@ -176,6 +177,7 @@ int main(int argc, char **argv)
     int ret;
     int i;
     int remove_file;
+    struct sigaction act;
 
     if (argc < 6 || argc > 7) {
         fprintf(stderr, "Usage: %s <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]\n", argv[0]);
@@ -247,7 +249,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    ofmt = guess_format("mpegts", NULL, NULL);
+    ofmt = av_guess_format("mpegts", NULL, NULL);
     if (!ofmt) {
         fprintf(stderr, "Could not find MPEG-TS muxer\n");
         exit(1);
@@ -311,7 +313,6 @@ int main(int argc, char **argv)
     write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
 
     /* Setup signals */
-    struct sigaction act;
     memset(&act, 0, sizeof(act));
     act.sa_handler = &handler;
 
