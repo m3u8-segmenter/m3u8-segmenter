@@ -1,0 +1,5 @@
+safe: true
+auto: true
+server: true2
+pygments: true
+lsi: false
