@@ -1,3 +1,9 @@
+segmenter (0.1~svn50-3) lucid; urgency=low
+
+  * Add libavformat-dev as a build-dep
+
+ -- John Francesco Ferlito <johnf@inodes.org>  Mon, 13 Dec 2010 18:11:44 +1100
+
 segmenter (0.1~svn50-2) lucid; urgency=low
 
   * Add patch to make sure ENDLIST is always written.
