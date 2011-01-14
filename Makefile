@@ -1,4 +1,4 @@
-CFLAGS=-g -O -Wall -Werror -pedantic -std=c99 -D_GNU_SOURCE
+CFLAGS=-g -O -Wall -Wstrict-prototypes -Wmissing-prototypes -Waggregate-return -Wcast-align -Wcast-qual -Wnested-externs -Wshadow -Wbad-function-cast -Wwrite-strings -Werror
 
 all:
 	gcc $(CFLAGS) m3u8-segmenter.c -o m3u8-segmenter -lavformat -lavcodec -lavutil

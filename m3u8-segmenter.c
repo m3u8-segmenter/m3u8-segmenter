@@ -23,7 +23,12 @@
 
 #include "libavformat/avformat.h"
 
+void handler(int signum);
+static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStream *input_stream);
+int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window);
+
 int terminate = 0;
+
 
 void handler(int signum) {
   terminate = 1;
@@ -88,14 +93,14 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
     return output_stream;
 }
 
-int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window) {
+int write_index_file(const char index_file[], const char tmp_index_file[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window) {
     FILE *index_fp;
     char *write_buf;
     unsigned int i;
 
-    index_fp = fopen(tmp_index, "w");
+    index_fp = fopen(tmp_index_file, "w");
     if (!index_fp) {
-        fprintf(stderr, "Could not open temporary m3u8 index file (%s), no index file will be created\n", tmp_index);
+        fprintf(stderr, "Could not open temporary m3u8 index file (%s), no index file will be created\n", tmp_index_file);
         return -1;
     }
 
@@ -142,7 +147,7 @@ int write_index_file(const char index[], const char tmp_index[], const unsigned 
     free(write_buf);
     fclose(index_fp);
 
-    return rename(tmp_index, index);
+    return rename(tmp_index_file, index_file);
 }
 
 int main(int argc, char **argv)
@@ -151,8 +156,8 @@ int main(int argc, char **argv)
     const char *output_prefix;
     double segment_duration;
     char *segment_duration_check;
-    const char *index;
-    char *tmp_index;
+    const char *index_file;
+    char *tmp_index_file;
     const char *http_prefix;
     long max_tsfiles = 0;
     char *max_tsfiles_check;
@@ -196,7 +201,7 @@ int main(int argc, char **argv)
         exit(1);
     }
     output_prefix = argv[3];
-    index = argv[4];
+    index_file = argv[4];
     http_prefix=argv[5];
     if (argc == 7) {
         max_tsfiles = strtol(argv[6], &max_tsfiles_check, 10);
@@ -218,17 +223,17 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    tmp_index = malloc(strlen(index) + 2);
-    if (!tmp_index) {
+    tmp_index_file = malloc(strlen(index_file) + 2);
+    if (!tmp_index_file) {
         fprintf(stderr, "Could not allocate space for temporary index filename\n");
         exit(1);
     }
 
-    strncpy(tmp_index, index, strlen(index) + 2);
-    dot = strrchr(tmp_index, '/');
-    dot = dot ? dot + 1 : tmp_index;
-    for (i = strlen(tmp_index) + 1; i > dot - tmp_index; i--) {
-        tmp_index[i] = tmp_index[i - 1];
+    strncpy(tmp_index_file, index_file, strlen(index_file) + 2);
+    dot = strrchr(tmp_index_file, '/');
+    dot = dot ? dot + 1 : tmp_index_file;
+    for (i = strlen(tmp_index_file) + 1; i > dot - tmp_index_file; i--) {
+        tmp_index_file[i] = tmp_index_file[i - 1];
     }
     *dot = '.';
 
@@ -310,7 +315,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
+    write_index = !write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
 
     /* Setup signals */
     memset(&act, 0, sizeof(act));
@@ -361,7 +366,7 @@ int main(int argc, char **argv)
             }
 
             if (write_index) {
-                write_index = !write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0, max_tsfiles);
+                write_index = !write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0, max_tsfiles);
             }
 
             if (remove_file) {
@@ -412,7 +417,7 @@ int main(int argc, char **argv)
     }
 
     if (write_index) {
-        write_index_file(index, tmp_index, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1, max_tsfiles);
+        write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1, max_tsfiles);
     }
 
     if (remove_file) {
