@@ -20,18 +20,33 @@
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <getopt.h>
 
 #include "libavformat/avformat.h"
 
+struct options_t {
+    const char *input_file;
+    unsigned long segment_duration;
+    const char *output_prefix;
+    const char *m3u8_file;
+    char *tmp_m3u8_file;
+    const char *url_prefix;
+    unsigned long num_segments;
+    int ondemand;
+};
+
+
 void handler(int signum);
 static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStream *input_stream);
-int write_index_file(const char index[], const char tmp_index[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window);
+int write_index_file(const struct options_t, const unsigned int first_segment, const unsigned int last_segment, const int end);
+void display_usage(void);
+
 
 int terminate = 0;
 
 
 void handler(int signum) {
-  terminate = 1;
+    terminate = 1;
 }
 
 static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStream *input_stream) {
@@ -93,14 +108,14 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
     return output_stream;
 }
 
-int write_index_file(const char index_file[], const char tmp_index_file[], const unsigned int segment_duration, const char output_prefix[], const char http_prefix[], const unsigned int first_segment, const unsigned int last_segment, const int end, const int window) {
+int write_index_file(const struct options_t options, const unsigned int first_segment, const unsigned int last_segment, const int end) {
     FILE *index_fp;
     char *write_buf;
     unsigned int i;
 
-    index_fp = fopen(tmp_index_file, "w");
+    index_fp = fopen(options.tmp_m3u8_file, "w");
     if (!index_fp) {
-        fprintf(stderr, "Could not open temporary m3u8 index file (%s), no index file will be created\n", tmp_index_file);
+        fprintf(stderr, "Could not open temporary m3u8 index file (%s), no index file will be created\n", options.tmp_m3u8_file);
         return -1;
     }
 
@@ -111,11 +126,11 @@ int write_index_file(const char index_file[], const char tmp_index_file[], const
         return -1;
     }
 
-    if (window) {
-        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n#EXT-X-MEDIA-SEQUENCE:%u\n", segment_duration, first_segment);
+    if (options.num_segments) {
+        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%lu\n#EXT-X-MEDIA-SEQUENCE:%u\n", options.segment_duration, first_segment);
     }
     else {
-        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%u\n", segment_duration);
+        snprintf(write_buf, 1024, "#EXTM3U\n#EXT-X-TARGETDURATION:%lu\n", options.segment_duration);
     }
     if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
         fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
@@ -125,7 +140,7 @@ int write_index_file(const char index_file[], const char tmp_index_file[], const
     }
 
     for (i = first_segment; i <= last_segment; i++) {
-        snprintf(write_buf, 1024, "#EXTINF:%u,\n%s%s-%u.ts\n", segment_duration, http_prefix, output_prefix, i);
+        snprintf(write_buf, 1024, "#EXTINF:%lu,\n%s%s-%u.ts\n", options.segment_duration, options.url_prefix, options.output_prefix, i);
         if (fwrite(write_buf, strlen(write_buf), 1, index_fp) != 1) {
             fprintf(stderr, "Could not write to m3u8 index file, will not continue writing to index file\n");
             free(write_buf);
@@ -147,20 +162,31 @@ int write_index_file(const char index_file[], const char tmp_index_file[], const
     free(write_buf);
     fclose(index_fp);
 
-    return rename(tmp_index_file, index_file);
+    return rename(options.tmp_m3u8_file, options.m3u8_file);
+}
+
+void display_usage(void)
+{
+    printf("Usage: m3u8-sementer [OPTION]...\n");
+    printf("\n");
+    printf("HTTP Live Streaming - Segments TS file and creates M3U8 index.");
+    printf("\n");
+    printf("\t-i, --input FILE             TS file to segment (Use - for stdin)\n");
+    printf("\t-d, --duration SECONDS       Duration of each segment (default: 10 seconds)\n");
+    printf("\t-o, --output-prefix PREFIX   Prefix for the TS segments, will be appended\n");
+    printf("\t                             with -1.ts, -2.ts etc\n");
+    printf("\t-m, --m3u8-file FILE         M3U8 output filename\n");
+    printf("\t-u, --url-prefix PREFIX      Prefix for web address of segments, e.g. http://example.org/video/\n");
+    printf("\t-n, --num-segment NUMNBER    Number of segments to keep on disk\n");
+    printf("\t-h, --help                   This help\n");
+    printf("\n");
+    printf("\n");
+
+    exit(0);
 }
 
 int main(int argc, char **argv)
 {
-    const char *input;
-    const char *output_prefix;
-    double segment_duration;
-    char *segment_duration_check;
-    const char *index_file;
-    char *tmp_index_file;
-    const char *http_prefix;
-    long max_tsfiles = 0;
-    char *max_tsfiles_check;
     double prev_segment_time = 0;
     unsigned int output_index = 1;
     AVInputFormat *ifmt;
@@ -184,57 +210,123 @@ int main(int argc, char **argv)
     int remove_file;
     struct sigaction act;
 
-    if (argc < 6 || argc > 7) {
-        fprintf(stderr, "Usage: %s <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]\n", argv[0]);
+    int opt;
+    int longindex;
+    char *endptr;
+    struct options_t options = {0};
+
+    static const char *optstring = "i:d:p:m:u:n:ovh?";
+
+    static const struct option longopts[] = {
+        { "input",         required_argument, NULL, 'i' },
+        { "duration",      required_argument, NULL, 'd' },
+        { "output-prefix", required_argument, NULL, 'p' },
+        { "m3u8-file",     required_argument, NULL, 'm' },
+        { "url-prefix",    required_argument, NULL, 'u' },
+        { "num-segments",  required_argument, NULL, 'n' },
+        { "ondemand",      required_argument, NULL, 'o' },
+        { "help",          no_argument,       NULL, 'h' },
+        { 0, 0, 0, 0 }
+    };
+
+
+    /* Set some defaults */
+    options.segment_duration = 10;
+
+    do {
+        opt = getopt_long(argc, argv, optstring, longopts, &longindex );
+        switch (opt) {
+            case 'i':
+                options.input_file = optarg;
+                if (!strcmp(options.input_file, "-")) {
+                    options.input_file = "pipe:";
+                }
+                break;
+
+            case 'd':
+                options.segment_duration = strtol(optarg, &endptr, 10);
+                if (optarg == endptr || options.segment_duration < 0 || options.segment_duration == -LONG_MAX) {
+                    fprintf(stderr, "Segment duration time (%s) invalid\n", optarg);
+                    exit(1);
+                }
+                break;
+
+            case 'p':
+                options.output_prefix = optarg;
+                break;
+
+            case 'm':
+                options.m3u8_file = optarg;
+                break;
+
+            case 'u':
+                options.url_prefix = optarg;
+                break;
+
+            case 's':
+                options.num_segments = strtol(optarg, &endptr, 10);
+                if (optarg == endptr || options.num_segments < 0 || options.num_segments >= LONG_MAX) {
+                    fprintf(stderr, "Maximum number of ts files (%s) invalid\n", optarg);
+                    exit(1);
+                }
+                break;
+
+            case 'o':
+                options.ondemand = 1;
+                break;
+
+            case 'h':
+                display_usage();
+                break;
+        }
+    } while (opt != -1);
+
+
+    /* Check required args where set*/
+    if (options.input_file == NULL) {
+        fprintf(stderr, "Please specify an input file.\n");
+        exit(1);
+    }
+
+    if (options.output_prefix == NULL) {
+        fprintf(stderr, "Please specify an putput prefix.\n");
+        exit(1);
+    }
+
+    if (options.m3u8_file == NULL) {
+        fprintf(stderr, "Please specify an output file.\n");
+        exit(1);
+    }
+
+    if (options.url_prefix == NULL) {
+        fprintf(stderr, "Please specify a url prefix.\n");
         exit(1);
     }
 
     av_register_all();
-
-    input = argv[1];
-    if (!strcmp(input, "-")) {
-        input = "pipe:";
-    }
-    segment_duration = strtod(argv[2], &segment_duration_check);
-    if (segment_duration_check == argv[2] || segment_duration == HUGE_VAL || segment_duration == -HUGE_VAL) {
-        fprintf(stderr, "Segment duration time (%s) invalid\n", argv[2]);
-        exit(1);
-    }
-    output_prefix = argv[3];
-    index_file = argv[4];
-    http_prefix=argv[5];
-    if (argc == 7) {
-        max_tsfiles = strtol(argv[6], &max_tsfiles_check, 10);
-        if (max_tsfiles_check == argv[6] || max_tsfiles < 0 || max_tsfiles >= INT_MAX) {
-            fprintf(stderr, "Maximum number of ts files (%s) invalid\n", argv[6]);
-            exit(1);
-        }
-    }
-
-    remove_filename = malloc(sizeof(char) * (strlen(output_prefix) + 15));
+    remove_filename = malloc(sizeof(char) * (strlen(options.output_prefix) + 15));
     if (!remove_filename) {
         fprintf(stderr, "Could not allocate space for remove filenames\n");
         exit(1);
     }
 
-    output_filename = malloc(sizeof(char) * (strlen(output_prefix) + 15));
+    output_filename = malloc(sizeof(char) * (strlen(options.output_prefix) + 15));
     if (!output_filename) {
         fprintf(stderr, "Could not allocate space for output filenames\n");
         exit(1);
     }
 
-    tmp_index_file = malloc(strlen(index_file) + 2);
-    if (!tmp_index_file) {
+    options.tmp_m3u8_file = malloc(strlen(options.m3u8_file) + 2);
+    if (!options.tmp_m3u8_file) {
         fprintf(stderr, "Could not allocate space for temporary index filename\n");
         exit(1);
     }
 
-    strncpy(tmp_index_file, index_file, strlen(index_file) + 2);
-    dot = strrchr(tmp_index_file, '/');
-    dot = dot ? dot + 1 : tmp_index_file;
-    for (i = strlen(tmp_index_file) + 1; i > dot - tmp_index_file; i--) {
-        tmp_index_file[i] = tmp_index_file[i - 1];
-    }
+    // Use a dotfile as a temporary file
+    strncpy(options.tmp_m3u8_file, options.m3u8_file, strlen(options.m3u8_file) + 2);
+    dot = strrchr(options.tmp_m3u8_file, '/');
+    dot = dot ? dot + 1 : options.tmp_m3u8_file;
+    memmove(dot + 1, dot, strlen(dot));
     *dot = '.';
 
     ifmt = av_find_input_format("mpegts");
@@ -243,7 +335,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    ret = av_open_input_file(&ic, input, ifmt, 0, NULL);
+    ret = av_open_input_file(&ic, options.input_file, ifmt, 0, NULL);
     if (ret != 0) {
         fprintf(stderr, "Could not open input file, make sure it is an mpegts file: %d\n", ret);
         exit(1);
@@ -293,7 +385,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    dump_format(oc, 0, output_prefix, 1);
+    dump_format(oc, 0, options.output_prefix, 1);
 
     codec = avcodec_find_decoder(video_st->codec->codec_id);
     if (!codec) {
@@ -304,7 +396,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
     }
 
-    snprintf(output_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, output_index++);
+    snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
     if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
         fprintf(stderr, "Could not open '%s'\n", output_filename);
         exit(1);
@@ -315,7 +407,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    write_index = !write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, last_segment, 0, max_tsfiles);
+    write_index = !write_index_file(options, first_segment, last_segment, 0);
 
     /* Setup signals */
     memset(&act, 0, sizeof(act));
@@ -353,11 +445,11 @@ int main(int argc, char **argv)
             segment_time = prev_segment_time;
         }
 
-        if (segment_time - prev_segment_time >= segment_duration) {
+        if (segment_time - prev_segment_time >= options.segment_duration) {
             put_flush_packet(oc->pb);
             url_fclose(oc->pb);
 
-            if (max_tsfiles && (int)(last_segment - first_segment) >= max_tsfiles - 1) {
+            if (options.num_segments && (int)(last_segment - first_segment) >= options.num_segments - 1) {
                 remove_file = 1;
                 first_segment++;
             }
@@ -366,15 +458,15 @@ int main(int argc, char **argv)
             }
 
             if (write_index) {
-                write_index = !write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 0, max_tsfiles);
+                write_index = !write_index_file(options, first_segment, ++last_segment, 0);
             }
 
             if (remove_file) {
-                snprintf(remove_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, first_segment - 1);
+                snprintf(remove_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, first_segment - 1);
                 remove(remove_filename);
             }
 
-            snprintf(output_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, output_index++);
+            snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
             if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
                 fprintf(stderr, "Could not open '%s'\n", output_filename);
                 break;
@@ -408,7 +500,7 @@ int main(int argc, char **argv)
     url_fclose(oc->pb);
     av_free(oc);
 
-    if (max_tsfiles && (int)(last_segment - first_segment) >= max_tsfiles - 1) {
+    if (options.num_segments && (int)(last_segment - first_segment) >= options.num_segments - 1) {
         remove_file = 1;
         first_segment++;
     }
@@ -417,13 +509,15 @@ int main(int argc, char **argv)
     }
 
     if (write_index) {
-        write_index_file(index_file, tmp_index_file, segment_duration, output_prefix, http_prefix, first_segment, ++last_segment, 1, max_tsfiles);
+        write_index_file(options, first_segment, ++last_segment, 1);
     }
 
     if (remove_file) {
-        snprintf(remove_filename, strlen(output_prefix) + 15, "%s-%u.ts", output_prefix, first_segment - 1);
+        snprintf(remove_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, first_segment - 1);
         remove(remove_filename);
     }
 
     return 0;
 }
+
+

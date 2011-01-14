@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Features:
+
+  - Move to using real command line options
+
 ## 0.2 (January 14, 2011)
 
 Features:
