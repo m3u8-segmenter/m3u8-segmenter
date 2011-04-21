@@ -387,13 +387,15 @@ int main(int argc, char **argv)
 
     dump_format(oc, 0, options.output_prefix, 1);
 
-    codec = avcodec_find_decoder(video_st->codec->codec_id);
-    if (!codec) {
-        fprintf(stderr, "Could not find video decoder, key frames will not be honored\n");
-    }
+    if (video_st) {
+      codec = avcodec_find_decoder(video_st->codec->codec_id);
+      if (!codec) {
+          fprintf(stderr, "Could not find video decoder, key frames will not be honored\n");
+      }
 
-    if (avcodec_open(video_st->codec, codec) < 0) {
-        fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
+      if (avcodec_open(video_st->codec, codec) < 0) {
+          fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
+      }
     }
 
     snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
@@ -490,7 +492,9 @@ int main(int argc, char **argv)
 
     av_write_trailer(oc);
 
-    avcodec_close(video_st->codec);
+    if (video_st) {
+      avcodec_close(video_st->codec);
+    }
 
     for(i = 0; i < oc->nb_streams; i++) {
         av_freep(&oc->streams[i]->codec);
