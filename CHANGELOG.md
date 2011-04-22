@@ -5,6 +5,7 @@
 Features:
 
   - Move to using real command line options
+  - Support segmenting of audio files as well (#1)
 
 ## 0.2 (January 14, 2011)
 
