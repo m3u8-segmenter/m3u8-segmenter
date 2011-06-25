@@ -346,7 +346,11 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+#if LIBAVFORMAT_VERSION_MAJOR >= 52 && LIBAVFORMAT_VERSION_MINOR >= 45
     ofmt = av_guess_format("mpegts", NULL, NULL);
+#else
+    ofmt = guess_format("mpegts", NULL, NULL);
+#endif
     if (!ofmt) {
         fprintf(stderr, "Could not find MPEG-TS muxer\n");
         exit(1);

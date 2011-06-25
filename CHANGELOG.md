@@ -1,11 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.3 (25th June 2011)
 
 Features:
 
   - Move to using real command line options
   - Support segmenting of audio files as well (#1)
+
+Bug Fixes:
+
+  - Support older version of libav (GH#2)
 
 ## 0.2 (January 14, 2011)
 
