@@ -32,7 +32,7 @@ commandd.
 \fBm3u8\-segmenter\fP is used to create file segments and an M3U8 index for Apple HTTP Live Streaming
 .br
 .SH EXAMPLE
-ffmpeg -loglevel quiet  -i big\_buck\_bunny.ogv -f mpegts - | ../m3u8-segmenter -i - -d 10 -p tmp/big\_buck\_bunny -m tmp/big_buck.m3u8 -u http://inodes.org/bigbuck/
+ffmpeg \-loglevel quiet  \-i big\_buck\_bunny.ogv \-f mpegts \- | ../m3u8-segmenter \-i \- \-d 10 \-p tmp/big\_buck\_bunny \-m tmp/big_buck.m3u8 \-u http://inodes.org/bigbuck/
 .br
 .SH AUTHOR
 m3u8\-segmenter was written by Chase Douglas and is now maintained by John Ferlito.

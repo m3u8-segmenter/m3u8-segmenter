@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Bug Fixes:
+
+  - Fix dashes in manpage
+
 ## 0.3 (25th June 2011)
 
 Features:
