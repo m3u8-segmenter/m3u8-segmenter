@@ -10,6 +10,7 @@ Features:
 Bug Fixes:
 
   - Support older version of libav (GH#2)
+  - Make sure we write a header to the start of each file (GH-2).
 
 ## 0.2 (January 14, 2011)
 

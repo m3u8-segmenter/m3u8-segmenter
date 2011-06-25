@@ -478,6 +478,12 @@ int main(int argc, char **argv)
                 break;
             }
 
+            // Write a new header at the start of each file
+            if (av_write_header(oc)) {
+              fprintf(stderr, "Could not write mpegts header to first output file\n");
+              exit(1);
+            }
+
             prev_segment_time = segment_time;
         }
 
