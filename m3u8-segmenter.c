@@ -173,7 +173,7 @@ void display_usage(void)
     printf("\n");
     printf("\t-i, --input FILE             TS file to segment (Use - for stdin)\n");
     printf("\t-d, --duration SECONDS       Duration of each segment (default: 10 seconds)\n");
-    printf("\t-o, --output-prefix PREFIX   Prefix for the TS segments, will be appended\n");
+    printf("\t-p, --output-prefix PREFIX   Prefix for the TS segments, will be appended\n");
     printf("\t                             with -1.ts, -2.ts etc\n");
     printf("\t-m, --m3u8-file FILE         M3U8 output filename\n");
     printf("\t-u, --url-prefix PREFIX      Prefix for web address of segments, e.g. http://example.org/video/\n");
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
     }
 
     if (options.output_prefix == NULL) {
-        fprintf(stderr, "Please specify an putput prefix.\n");
+        fprintf(stderr, "Please specify an output prefix.\n");
         exit(1);
     }
 
