@@ -4,7 +4,9 @@
 
 Bug Fixes:
 
-  - Fix dashes in manpage
+  - Fix dashes in manpage.
+  - Fix prefix option (Bryan Murphy) (GH-4).
+  - Remove unused ondemand option.
 
 ## 0.3 (25th June 2011)
 

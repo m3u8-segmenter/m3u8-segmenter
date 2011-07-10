@@ -32,7 +32,6 @@ struct options_t {
     char *tmp_m3u8_file;
     const char *url_prefix;
     unsigned long num_segments;
-    int ondemand;
 };
 
 
@@ -224,7 +223,6 @@ int main(int argc, char **argv)
         { "m3u8-file",     required_argument, NULL, 'm' },
         { "url-prefix",    required_argument, NULL, 'u' },
         { "num-segments",  required_argument, NULL, 'n' },
-        { "ondemand",      required_argument, NULL, 'o' },
         { "help",          no_argument,       NULL, 'h' },
         { 0, 0, 0, 0 }
     };
@@ -269,10 +267,6 @@ int main(int argc, char **argv)
                     fprintf(stderr, "Maximum number of ts files (%s) invalid\n", optarg);
                     exit(1);
                 }
-                break;
-
-            case 'o':
-                options.ondemand = 1;
                 break;
 
             case 'h':
