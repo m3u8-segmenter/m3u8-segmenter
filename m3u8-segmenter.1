@@ -19,18 +19,35 @@
 m3u8\-segmenter \- Performs Apple HTTP Live Streaming segmentation
 .SH SYNOPSIS
 .B m3u8\-segmenter
-.RI <input MPEG-TS file> <segment duration in seconds> <output MPEG-TS file prefix> <output m3u8 index file> <http prefix> [<segment window size>]
-.br
+\-i <input MPEG-TS file> -d <segment duration in seconds> -p <output MPEG-TS file prefix> -m <output m3u8 index file> -u <http prefix>
 .SH DESCRIPTION
-This manual page documents briefly the
-.B m3u8\-segmenter
-commandd.
+Takes in an MPEG-TS stream from a tool like ffmpeg and breaks it up into
+multiple ts-segments suitable for http live streaming. The M3U8 stream
+descriptor is also generated.
 .PP
-.\" TeX users may be more comfortable with the \fB<whatever>\fP and
-.\" \fI<whatever>\fP escape sequences to invode bold face and italics,
-.\" respectively.
 \fBm3u8\-segmenter\fP is used to create file segments and an M3U8 index for Apple HTTP Live Streaming
-.br
+.SH OPTIONS
+.TP
+\-h, \-\-help
+display a short help text
+.TP
+\-i, \-\-input FILE
+the input file. Use \- to read from standard input.
+.TP
+\-d, \--duration SECONDS
+the length of each segment in seconds.
+.TP
+\-p, \-\-output\-prefix PREFIX
+the prefix for the TS segments. It will be appended with -1.ts, -2.ts etc
+.TP
+\-m, \-\-m3u8\-file FILE
+the M3U8 output filename
+.TP
+\-u, \-\-url\-prefix PREFIX
+the prefix for web address of segments, e.g. http://example.org/video/
+.TP
+\-n, \-\-num\-segment NUMNBER
+the number of segments to keep on disk
 .SH EXAMPLE
 ffmpeg \-loglevel quiet  \-i big\_buck\_bunny.ogv \-f mpegts \- | ../m3u8-segmenter \-i \- \-d 10 \-p tmp/big\_buck\_bunny \-m tmp/big_buck.m3u8 \-u http://inodes.org/bigbuck/
 .br

@@ -7,6 +7,8 @@ Bug Fixes:
   - Fix dashes in manpage.
   - Fix prefix option (Bryan Murphy) (GH-4).
   - Remove unused ondemand option.
+  - Add some more info to the README.
+  - Add all the options to the Makefile.
 
 ## 0.3 (25th June 2011)
 
