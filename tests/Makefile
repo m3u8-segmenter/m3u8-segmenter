@@ -1,4 +1,4 @@
-all: test1
+all: test1 test2
 
 FFMPEG_VIDEO=ffmpeg -loglevel quiet  -i big_buck_bunny.ogv -f mpegts -
 FFMPEG_AUDIO=ffmpeg -loglevel quiet  -i Hydrate-Kenny_Beltrey.oga -f mpegts -
