@@ -176,7 +176,7 @@ void display_usage(void)
     printf("\t                             with -1.ts, -2.ts etc\n");
     printf("\t-m, --m3u8-file FILE         M3U8 output filename\n");
     printf("\t-u, --url-prefix PREFIX      Prefix for web address of segments, e.g. http://example.org/video/\n");
-    printf("\t-n, --num-segment NUMNBER    Number of segments to keep on disk\n");
+    printf("\t-n, --num-segment NUMBER     Number of segments to keep on disk\n");
     printf("\t-h, --help                   This help\n");
     printf("\n");
     printf("\n");
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
                 options.url_prefix = optarg;
                 break;
 
-            case 's':
+            case 'n':
                 options.num_segments = strtol(optarg, &endptr, 10);
                 if (optarg == endptr || options.num_segments < 0 || options.num_segments >= LONG_MAX) {
                     fprintf(stderr, "Maximum number of ts files (%s) invalid\n", optarg);
@@ -288,7 +288,7 @@ int main(int argc, char **argv)
     }
 
     if (options.m3u8_file == NULL) {
-        fprintf(stderr, "Please specify an output file.\n");
+        fprintf(stderr, "Please specify an m3u8 output file.\n");
         exit(1);
     }
 
