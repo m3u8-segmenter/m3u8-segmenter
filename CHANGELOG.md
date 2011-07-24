@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Features:
+
+  - Move to using autoconf
+
 Bug Fixes:
 
   - Fix dashes in manpage.

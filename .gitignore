@@ -4,3 +4,18 @@ debian/files
 debian/m3u8-segmenter.debhelper.log
 debian/m3u8-segmenter.substvars
 
+Makefile.in
+aclocal.m4
+autom4te.cache/
+cfg/*
+configure
+tests/Makefile.in
+tests/ffmpeg/
+
+.deps/
+Makefile
+config.log
+config.status
+tests/Makefile
+
+m3u8-segmenter-*.tar.gz

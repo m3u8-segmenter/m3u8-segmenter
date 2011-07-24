@@ -26,12 +26,12 @@
 
 struct options_t {
     const char *input_file;
-    unsigned long segment_duration;
+    long segment_duration;
     const char *output_prefix;
     const char *m3u8_file;
     char *tmp_m3u8_file;
     const char *url_prefix;
-    unsigned long num_segments;
+    long num_segments;
 };
 
 
@@ -45,6 +45,7 @@ int terminate = 0;
 
 
 void handler(int signum) {
+    signum = 0;
     terminate = 1;
 }
 
@@ -205,14 +206,14 @@ int main(int argc, char **argv)
     int decode_done;
     char *dot;
     int ret;
-    int i;
+    unsigned int i;
     int remove_file;
     struct sigaction act;
 
     int opt;
     int longindex;
     char *endptr;
-    struct options_t options = {0};
+    struct options_t options; // = {0};
 
     static const char *optstring = "i:d:p:m:u:n:ovh?";
 
