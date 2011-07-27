@@ -4,7 +4,8 @@
 
 Features:
 
-  - Move to using autoconf
+  - Move to using autoconf.
+  - Support newer version of ffmpeg (GH-8 help from Dominic Evans).
 
 Bug Fixes:
 
@@ -13,7 +14,7 @@ Bug Fixes:
   - Remove unused ondemand option.
   - Add some more info to the README.
   - Add all the options to the Makefile.
-  - Fix -n command line option (GH-11 Dominic Evans)
+  - Fix -n command line option (GH-11 Dominic Evans).
 
 ## 0.3 (25th June 2011)
 

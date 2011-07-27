@@ -22,7 +22,8 @@
 #include <signal.h>
 #include <getopt.h>
 
-#include "libavformat/avformat.h"
+#include <libavformat/avformat.h>
+#include "libav-compat.h"
 
 struct options_t {
     const char *input_file;
@@ -79,7 +80,7 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
     }
 
     switch (input_codec_context->codec_type) {
-        case CODEC_TYPE_AUDIO:
+        case AVMEDIA_TYPE_AUDIO:
             output_codec_context->channel_layout = input_codec_context->channel_layout;
             output_codec_context->sample_rate = input_codec_context->sample_rate;
             output_codec_context->channels = input_codec_context->channels;
@@ -91,7 +92,7 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
                 output_codec_context->block_align = input_codec_context->block_align;
             }
             break;
-        case CODEC_TYPE_VIDEO:
+        case AVMEDIA_TYPE_VIDEO:
             output_codec_context->pix_fmt = input_codec_context->pix_fmt;
             output_codec_context->width = input_codec_context->width;
             output_codec_context->height = input_codec_context->height;
@@ -330,7 +331,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    ret = av_open_input_file(&ic, options.input_file, ifmt, 0, NULL);
+    ret = avformat_open_input(&ic, options.input_file, ifmt, NULL);
     if (ret != 0) {
         fprintf(stderr, "Could not open input file, make sure it is an mpegts file: %d\n", ret);
         exit(1);
@@ -341,11 +342,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-#if LIBAVFORMAT_VERSION_MAJOR >= 52 && LIBAVFORMAT_VERSION_MINOR >= 45
     ofmt = av_guess_format("mpegts", NULL, NULL);
-#else
-    ofmt = guess_format("mpegts", NULL, NULL);
-#endif
     if (!ofmt) {
         fprintf(stderr, "Could not find MPEG-TS muxer\n");
         exit(1);
@@ -363,12 +360,12 @@ int main(int argc, char **argv)
 
     for (i = 0; i < ic->nb_streams && (video_index < 0 || audio_index < 0); i++) {
         switch (ic->streams[i]->codec->codec_type) {
-            case CODEC_TYPE_VIDEO:
+            case AVMEDIA_TYPE_VIDEO:
                 video_index = i;
                 ic->streams[i]->discard = AVDISCARD_NONE;
                 video_st = add_output_stream(oc, ic->streams[i]);
                 break;
-            case CODEC_TYPE_AUDIO:
+            case AVMEDIA_TYPE_AUDIO:
                 audio_index = i;
                 ic->streams[i]->discard = AVDISCARD_NONE;
                 audio_st = add_output_stream(oc, ic->streams[i]);
@@ -379,12 +376,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (av_set_parameters(oc, NULL) < 0) {
-        fprintf(stderr, "Invalid output format parameters\n");
-        exit(1);
-    }
-
-    dump_format(oc, 0, options.output_prefix, 1);
+    av_dump_format(oc, 0, options.output_prefix, 1);
 
     if (video_st) {
       codec = avcodec_find_decoder(video_st->codec->codec_id);
@@ -397,13 +389,14 @@ int main(int argc, char **argv)
       }
     }
 
+
     snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
-    if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
+    if (avio_open(&oc->pb, output_filename, URL_WRONLY) < 0) {
         fprintf(stderr, "Could not open '%s'\n", output_filename);
         exit(1);
     }
 
-    if (av_write_header(oc)) {
+    if (avformat_write_header(oc, NULL)) {
         fprintf(stderr, "Could not write mpegts header to first output file\n");
         exit(1);
     }
@@ -436,19 +429,19 @@ int main(int argc, char **argv)
             break;
         }
 
-        if (packet.stream_index == video_index && (packet.flags & PKT_FLAG_KEY)) {
+        if (packet.stream_index == video_index && (packet.flags & AV_PKT_FLAG_KEY)) {
             segment_time = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
         }
         else if (video_index < 0) {
             segment_time = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
         }
         else {
-            segment_time = prev_segment_time;
+            segment_time = prev_segment_time + 1;
         }
 
         if (segment_time - prev_segment_time >= options.segment_duration) {
-            put_flush_packet(oc->pb);
-            url_fclose(oc->pb);
+            avio_flush(oc->pb);
+            avio_close(oc->pb);
 
             if (options.num_segments && (int)(last_segment - first_segment) >= options.num_segments - 1) {
                 remove_file = 1;
@@ -468,13 +461,13 @@ int main(int argc, char **argv)
             }
 
             snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
-            if (url_fopen(&oc->pb, output_filename, URL_WRONLY) < 0) {
+            if (avio_open(&oc->pb, output_filename, URL_WRONLY) < 0) {
                 fprintf(stderr, "Could not open '%s'\n", output_filename);
                 break;
             }
 
             // Write a new header at the start of each file
-            if (av_write_header(oc)) {
+            if (avformat_write_header(oc, NULL)) {
               fprintf(stderr, "Could not write mpegts header to first output file\n");
               exit(1);
             }
@@ -506,7 +499,7 @@ int main(int argc, char **argv)
         av_freep(&oc->streams[i]);
     }
 
-    url_fclose(oc->pb);
+    avio_close(oc->pb);
     av_free(oc);
 
     if (options.num_segments && (int)(last_segment - first_segment) >= options.num_segments - 1) {
