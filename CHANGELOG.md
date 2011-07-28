@@ -15,6 +15,7 @@ Bug Fixes:
   - Add some more info to the README.
   - Add all the options to the Makefile.
   - Fix -n command line option (GH-11 Dominic Evans).
+  - Improve the segmentation time.
 
 ## 0.3 (25th June 2011)
 
