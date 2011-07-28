@@ -41,16 +41,18 @@ libav_vars:
 	$(eval LIB=libav)
 	$(eval LIB_VERSION=0.7.1)
 	$(eval PREFIX=$(shell pwd)/$(LIB)/$(LIB)-$(LIB_VERSION)/install)
+	$(eval FFMPEG_PATH=LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin)
 
 ffmpeg_vars:
 	$(eval LIB=ffmpeg)
 	$(eval LIB_VERSION=0.8)
 	$(eval PREFIX=$(shell pwd)/$(LIB)/$(LIB)-$(LIB_VERSION)/install)
+	$(eval FFMPEG_PATH=LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin)
 
 local_vars:
 	mkdir -p local
 	$(eval PREFIX=$(shell pwd)/local)
-
+	$(eval FFMPEG_PATH="/usr/bin")
 
 
 get_libav: libav_vars get
@@ -84,14 +86,13 @@ FFMPEG_VIDEO=ffmpeg -loglevel quiet  -i big_buck_bunny.ogv -f mpegts -
 FFMPEG_AUDIO=ffmpeg -loglevel quiet  -i Hydrate-Kenny_Beltrey.oga -f mpegts -
 
 video_test:
-	LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/$(FFMPEG_VIDEO) 2>/dev/null | LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/m3u8-segmenter -i - -d 10 -p tmp/big_buck_bunny -m tmp/big_buck.m3u8 -u http://inodes.org/bigbuck/
-	diff test1.m3u8 tmp/big_buck.m3u8
-	for i in tmp/big_buck_bunny-[0-9]*.ts; do
-
+	$(FFMPEG_PATH)/$(FFMPEG_VIDEO) 2>/dev/null | LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/m3u8-segmenter -i - -d 10 -p tmp/big_buck_bunny -m tmp/big_buck.m3u8 -u http://inodes.org/bigbuck/
+	diff -u test1.m3u8 tmp/big_buck.m3u8
+	for i in tmp/big_buck_bunny-[0-9]*.ts; do $(FFMPEG_PATH)/ffmpeg -i $$i 2>&1 | grep Duration; done
 
 audio_test:
-	LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/$(FFMPEG_AUDIO) 2>/dev/null | LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/m3u8-segmenter -i - -d 10 -p tmp/hydrate -m tmp/hydrate.m3u8 -u http://inodes.org/hydrate/
-	diff test2.m3u8 tmp/hydrate.m3u8
+	$(FFMPEG_PATH)/$(FFMPEG_AUDIO) 2>/dev/null | LD_LIBRARY_PATH=$(PREFIX)/lib $(PREFIX)/bin/m3u8-segmenter -i - -d 10 -p tmp/hydrate -m tmp/hydrate.m3u8 -u http://inodes.org/hydrate/
+	diff -u test2.m3u8 tmp/hydrate.m3u8
 
 preparation:
 	rm -f tmp/*
