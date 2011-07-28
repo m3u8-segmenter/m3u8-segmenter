@@ -199,8 +199,8 @@ int main(int argc, char **argv)
     AVCodec *codec;
     char *output_filename;
     char *remove_filename;
-    int video_index;
-    int audio_index;
+    int video_index = -1;
+    int audio_index = -1;
     unsigned int first_segment = 1;
     unsigned int last_segment = 0;
     int write_index = 1;
@@ -232,6 +232,7 @@ int main(int argc, char **argv)
 
     /* Set some defaults */
     options.segment_duration = 10;
+    options.num_segments = 0;
 
     do {
         opt = getopt_long(argc, argv, optstring, longopts, &longindex );
@@ -355,9 +356,6 @@ int main(int argc, char **argv)
     }
     oc->oformat = ofmt;
 
-    video_index = -1;
-    audio_index = -1;
-
     for (i = 0; i < ic->nb_streams && (video_index < 0 || audio_index < 0); i++) {
         switch (ic->streams[i]->codec->codec_type) {
             case AVMEDIA_TYPE_VIDEO:
@@ -429,15 +427,18 @@ int main(int argc, char **argv)
             break;
         }
 
+
+        // Use video stream as time base and split at keyframes. Otherwise use audio stream
         if (packet.stream_index == video_index && (packet.flags & AV_PKT_FLAG_KEY)) {
-            segment_time = (double)video_st->pts.val * video_st->time_base.num / video_st->time_base.den;
+            segment_time = packet.pts * av_q2d(video_st->time_base);
         }
         else if (video_index < 0) {
-            segment_time = (double)audio_st->pts.val * audio_st->time_base.num / audio_st->time_base.den;
+            segment_time = packet.pts * av_q2d(audio_st->time_base);
         }
         else {
-            segment_time = prev_segment_time + 1;
+          segment_time = prev_segment_time;
         }
+
 
         if (segment_time - prev_segment_time >= options.segment_duration) {
             avio_flush(oc->pb);
