@@ -4,18 +4,19 @@
 
 Features:
 
-  - Move to using autoconf.
-  - Support newer version of ffmpeg (GH-8 help from Dominic Evans).
+  - Move to using autoconf
+  - Support newer version of ffmpeg (GH-8 help from Dominic Evans)
+  - Improve the segmentation time
+  - Add some more info to the README
+  - Add all the options to the Makefile
 
 Bug Fixes:
 
   - Fix dashes in manpage.
-  - Fix prefix option (GH-4 Bryan Murphy).
-  - Remove unused ondemand option.
-  - Add some more info to the README.
-  - Add all the options to the Makefile.
-  - Fix -n command line option (GH-11 Dominic Evans).
-  - Improve the segmentation time.
+  - Fix prefix option (GH-4 Bryan Murphy)
+  - Remove unused ondemand option
+  - Fix -n command line option (GH-11 Dominic Evans)
+  - Ignore identical DTS and PTS warnings (GH-9 Justing Greer via Dominic Evans)
 
 ## 0.3 (25th June 2011)
 
