@@ -379,7 +379,7 @@ int main(int argc, char **argv)
     if (video_st) {
       codec = avcodec_find_decoder(video_st->codec->codec_id);
       if (!codec) {
-          fprintf(stderr, "Could not find video decoder, key frames will not be honored\n");
+          fprintf(stderr, "Could not find video decoder %x, key frames will not be honored\n", video_st->codec->codec_id);
       }
 
       if (avcodec_open(video_st->codec, codec) < 0) {

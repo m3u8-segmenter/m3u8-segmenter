@@ -9,6 +9,7 @@ Features:
   - Improve the segmentation time
   - Add some more info to the README
   - Add all the options to the Makefile
+  - Modify tests to use mp4 files
 
 Bug Fixes:
 
