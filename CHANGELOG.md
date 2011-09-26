@@ -17,6 +17,7 @@ Bug Fixes:
   - Fix prefix option (GH-4 Bryan Murphy)
   - Remove unused ondemand option
   - Fix -n command line option (GH-11 Dominic Evans)
+  - Ignore identical DTS and PTS warnings (GH-9 Justing Greer via Dominic Evans)
 
 ## 0.3 (25th June 2011)
 

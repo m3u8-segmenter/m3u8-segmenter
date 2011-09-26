@@ -374,6 +374,9 @@ int main(int argc, char **argv)
         }
     }
 
+    // Don't print warnings when PTS and DTS are identical.
+    ic->flags |= AVFMT_FLAG_IGNDTS;
+
     av_dump_format(oc, 0, options.output_prefix, 1);
 
     if (video_st) {
@@ -409,7 +412,7 @@ int main(int argc, char **argv)
     sigaction(SIGTERM, &act, NULL);
 
     do {
-        double segment_time;
+        double segment_time = prev_segment_time;
         AVPacket packet;
 
         if (terminate) {
@@ -426,7 +429,6 @@ int main(int argc, char **argv)
             av_free_packet(&packet);
             break;
         }
-
 
         // Use video stream as time base and split at keyframes. Otherwise use audio stream
         if (packet.stream_index == video_index && (packet.flags & AV_PKT_FLAG_KEY)) {
