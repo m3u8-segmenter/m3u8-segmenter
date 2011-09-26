@@ -46,7 +46,7 @@ int terminate = 0;
 
 
 void handler(int signum) {
-    signum = 0;
+    (void)signum;
     terminate = 1;
 }
 
