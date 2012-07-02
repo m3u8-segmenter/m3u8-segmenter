@@ -55,7 +55,7 @@ static AVStream *add_output_stream(AVFormatContext *output_format_context, AVStr
     AVCodecContext *output_codec_context;
     AVStream *output_stream;
 
-    output_stream = av_new_stream(output_format_context, 0);
+    output_stream = avformat_new_stream(output_format_context, 0);
     if (!output_stream) {
         fprintf(stderr, "Could not allocate stream\n");
         exit(1);
