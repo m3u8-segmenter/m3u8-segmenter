@@ -19,3 +19,7 @@ config.status
 tests/Makefile
 
 m3u8-segmenter-*.tar.gz
+
+tests/libav/
+tests/local/
+ts_decode/
