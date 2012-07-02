@@ -214,7 +214,7 @@ int main(int argc, char **argv)
     int opt;
     int longindex;
     char *endptr;
-    struct options_t options; // = {0};
+    struct options_t options;
 
     static const char *optstring = "i:d:p:m:u:n:ovh?";
 
@@ -229,6 +229,8 @@ int main(int argc, char **argv)
         { 0, 0, 0, 0 }
     };
 
+
+    memset(&options, 0 ,sizeof(options));
 
     /* Set some defaults */
     options.segment_duration = 10;
@@ -338,7 +340,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    if (av_find_stream_info(ic) < 0) {
+    if (avformat_find_stream_info(ic, NULL) < 0) {
         fprintf(stderr, "Could not read stream information\n");
         exit(1);
     }
@@ -385,7 +387,7 @@ int main(int argc, char **argv)
           fprintf(stderr, "Could not find video decoder %x, key frames will not be honored\n", video_st->codec->codec_id);
       }
 
-      if (avcodec_open(video_st->codec, codec) < 0) {
+      if (avcodec_open2(video_st->codec, codec, NULL) < 0) {
           fprintf(stderr, "Could not open video decoder, key frames will not be honored\n");
       }
     }
