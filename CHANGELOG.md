@@ -19,6 +19,7 @@ Bug Fixes:
   - Fix -n command line option (GH-11 Dominic Evans)
   - Ignore identical DTS and PTS warnings (GH-9 Justing Greer via Dominic Evans)
   - Improve unused parameter for signum (GH-13 Dominic Evans)
+  - Close TS file properly (@krisbulman)
 
 ## 0.3 (25th June 2011)
 
