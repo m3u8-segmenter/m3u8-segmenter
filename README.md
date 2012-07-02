@@ -13,27 +13,31 @@ Ferlito.
 TO install from source you will need to make sure you have the libav/ffmpeg
 libraries installed. On Ubuntu/Debian you would run
 
-    $ apt-get install libavformat-dev
+``` bash
+apt-get install libavformat-dev
+```
 
 You can then build and install m3u8-segmenter by running
 
-    $ aclocal
-    $ automake -ac
-    $ autoconf
-    $ ./configure
-    $ make
-    $ sudo make install
-
-
+``` bash
+aclocal
+automake -ac
+autoconf
+./configure
+make
+sudo make install
+```
 ## Usage
 
 Some example command lines
 
-    $ ffmpeg -loglevel quiet  -i big_buck_bunny.ogv -f mpegts - | \
-        m3u8-segmenter -i - -d 10 -p tmp/big_buck_bunny -m tmp/big_buck.m3u8 -u http://inodes.org/bigbuck/
+``` bash
+ffmpeg -loglevel quiet  -i big_buck_bunny.ogv -f mpegts - | \
+  m3u8-segmenter -i - -d 10 -p tmp/big_buck_bunny -m tmp/big_buck.m3u8 -u http://inodes.org/bigbuck/
 
-    $ ffmpeg -er 4 -i input.mp3 -f mpegts -acodec libmp3lame -ar 22050 -ab 32k -vn - | \
-        m3u8-segmenter -i - -d 10 -p outputdir/prefix -m outputdir/output.m3u8 -u http://domain.com/
+ffmpeg -er 4 -i input.mp3 -f mpegts -acodec libmp3lame -ar 22050 -ab 32k -vn - | \
+  m3u8-segmenter -i - -d 10 -p outputdir/prefix -m outputdir/output.m3u8 -u http://domain.com/
+```
 
 ## Note on Patches/Pull Requests
 
