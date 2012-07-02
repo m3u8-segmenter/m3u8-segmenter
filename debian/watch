@@ -1,2 +1,2 @@
 version=3
-http://githubredir.debian.net/github/johnf/m3u8-segmenter (.*).tar.gz
+http://githubredir.debian.net/github/johnf/m3u8-segmenter/v(.*).tar.gz
