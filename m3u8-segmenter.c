@@ -443,8 +443,8 @@ int main(int argc, char **argv)
 
 
         if (segment_time - prev_segment_time >= options.segment_duration) {
-            av_write_trailer(oc);   //close ts file and free memory
-	    avio_flush(oc->pb);
+            av_write_trailer(oc);   // close ts file and free memory
+            avio_flush(oc->pb);
             avio_close(oc->pb);
 
             if (options.num_segments && (int)(last_segment - first_segment) >= options.num_segments - 1) {
