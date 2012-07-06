@@ -1,3 +1,9 @@
+m3u8-segmenter (1.0.1-1) precise; urgency=low
+
+  * New upstream release.
+
+ -- John Francesco Ferlito <johnf@inodes.org>  Sat, 07 Jul 2012 01:28:47 +1000
+
 m3u8-segmenter (1.0.0-1) precise; urgency=low
 
   * New upstream release.

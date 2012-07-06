@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1
+
+Bug Fixes:
+
+  - Support newer versions of ffmpeg URL\_WRONLY -> AVIO\_FLAG\_READ
+
 ## 1.0.0
 
 Features:
