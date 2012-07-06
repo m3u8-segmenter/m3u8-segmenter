@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.0.1
+## 1.0.2 (2012-07-07)
+
+Bug Fixes:
+
+  - Missed an occurence of URL_WRONLY
+
+
+## 1.0.1 (2012-07-07)
 
 Bug Fixes:
 

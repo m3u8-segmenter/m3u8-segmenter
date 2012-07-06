@@ -467,7 +467,7 @@ int main(int argc, char **argv)
             }
 
             snprintf(output_filename, strlen(options.output_prefix) + 15, "%s-%u.ts", options.output_prefix, output_index++);
-            if (avio_open(&oc->pb, output_filename, URL_WRONLY) < 0) {
+            if (avio_open(&oc->pb, output_filename, AVIO_FLAG_WRITE) < 0) {
                 fprintf(stderr, "Could not open '%s'\n", output_filename);
                 break;
             }
