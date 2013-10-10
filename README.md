@@ -1,4 +1,10 @@
-# m3u8-segmenter
+# Inactive and Deprecated
+
+I no longer have much time to work on this project and for the most part it is deprecated
+now that both ffmpeg and libav have direct support for segmenting and creating m3u files.
+Quite happy to point this elsewhere if someone else would like to take over the project.
+
+## m3u8-segmenter
 
 **m3u8-segmenter** is an Apple HTTP Live Segmenter. It takes an MPEG-TS stream from a
 tool like ffmpeg and breaks it up into multiple ts-segments suitable for HTTP
